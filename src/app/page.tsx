@@ -1,9 +1,7 @@
-import { Button } from "@/components/ui/button";
-
 export default function Home() {
   return (
-    <div>
-      <Button size={"lg"}>Click me</Button>
+    <div className="h-screen w-screen content-center text-center text-3xl">
+      Home Page
     </div>
   );
 }
