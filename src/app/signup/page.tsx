@@ -1,6 +1,6 @@
 "use client";
-
-import React, { FormEvent, useState, useEffect } from "react";
+import React, { FormEvent, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FaGoogle } from "react-icons/fa";
 import { RiFacebookFill } from "react-icons/ri";
@@ -19,76 +19,178 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { EyeIcon, EyeOffIcon, Loader2 } from "lucide-react";
 import { ModeToggle } from "@/components/ui/modeToggle";
+import { checkUserNameAvailablity, signup } from "@/service/auth.service";
+import { useToast } from "@/hooks/use-toast";
+
+interface FormData {
+  username: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
+
 const SignupPage = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [username, setUsername] = useState("");
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
   const [usernameError, setUsernameError] = useState("");
   const [usernameAvailable, setUsernameAvailable] = useState(false);
 
-  // Debounced function to check username availability
-  const checkUsername = debounce(async (username: string) => {
-    if (username.length < 3) {
-      setUsernameError("Min 3 characters required");
-      setUsernameAvailable(false);
-      return;
-    }
+  const { toast } = useToast();
+  const router = useRouter();
 
-    setIsChecking(true);
-    try {
-      // Replace with your actual API endpoint
+  const [formData, setFormData] = useState<FormData>({
+    username: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
 
-      const response = await fetch(
-        `http://localhost:3000/api/v1/auth/exists/${username}`,
-      );
+  const [formErrors, setFormErrors] = useState({
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Error checking username");
-      }
-
-      if (data.data.userExists) {
-        setUsernameError("Username taken");
+  const debouncedUsernameCheck = useCallback(
+    debounce(async (username: string) => {
+      if (username.length < 3) {
+        setUsernameError("Min 3 characters required");
         setUsernameAvailable(false);
-      } else {
-        setUsernameError("");
-        setUsernameAvailable(true);
+        setIsChecking(false);
+        return;
       }
-    } catch (error) {
-      // Use 'unknown' type and assert the error to be an instance of Error
-      if (error instanceof Error) {
-        setUsernameError(error.message);
-      } else {
-        setUsernameError("An unexpected error occurred");
+
+      try {
+        const data = await checkUserNameAvailablity(username);
+
+        if (data.data.userExists) {
+          setUsernameError("Username taken");
+          setUsernameAvailable(false);
+        } else {
+          setUsernameError("");
+          setUsernameAvailable(true);
+        }
+      } catch (error) {
+        if (error instanceof Error) {
+          setUsernameError(error.message);
+        } else {
+          setUsernameError("An unexpected error occurred");
+        }
+        setUsernameAvailable(false);
+      } finally {
+        setIsChecking(false); // Stop the loader when done
       }
-      setUsernameAvailable(false);
-    } finally {
-      setIsChecking(false);
-    }
-  }, 500);
+    }, 500),
+    [],
+  );
+  const validateField = (name: string, value: string) => {
+    switch (name) {
+      case "username":
+        const usernameRegex = /^[A-Za-z][A-Za-z0-9_]*$/; // Starts with letter and allows letters, digits, and underscores
+        return usernameRegex.test(value)
+          ? ""
+          : "Username must start with a letter and can only contain letters, digits, and underscores";
 
-  useEffect(() => {
-    if (username) {
-      checkUsername(username);
-    } else {
-      setUsernameError("");
-      setUsernameAvailable(false);
+      case "email":
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(value) ? "" : "Invalid email address";
+      case "password":
+        const passwordRegex =
+          /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+        return passwordRegex.test(value)
+          ? ""
+          : "Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character";
+      case "confirmPassword":
+        return value === formData.password ? "" : "Passwords do not match";
+      default:
+        return "";
     }
-
-    return () => {
-      checkUsername.cancel();
-    };
-  }, [username, checkUsername]);
-
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!usernameAvailable) {
-      return;
-    }
-    console.log("Signup submitted");
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    // Handle username validation
+    if (name === "username") {
+      // Clear previous errors immediately
+      setUsernameError("");
+
+      if (!value) {
+        setUsernameAvailable(false);
+        setIsChecking(false);
+      } else {
+        const error = validateField(name, value);
+        if (error) {
+          setUsernameError(error);
+          setUsernameAvailable(false);
+          setIsChecking(false); // Stop the loader on error
+        } else {
+          setIsChecking(true); // Start the loader for API check
+          debouncedUsernameCheck(value);
+        }
+      }
+    }
+    // Handle other field validations
+    else {
+      const error = validateField(name, value);
+      setFormErrors((prev) => ({
+        ...prev,
+        [name]: error,
+      }));
+
+      // Special handling for confirm password when password changes
+      if (name === "password" && formData.confirmPassword) {
+        setFormErrors((prev) => ({
+          ...prev,
+          confirmPassword:
+            formData.confirmPassword === value ? "" : "Passwords do not match",
+        }));
+      }
+    }
+  };
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    try {
+      e.preventDefault();
+      if (
+        !usernameAvailable ||
+        Object.values(formErrors).some((error) => error)
+      ) {
+        return;
+      }
+      const data = await signup({
+        userName: formData.username,
+        userPassword: formData.password,
+        userEmail: formData.email,
+      });
+
+      localStorage.setItem("token", data.data.accessToken);
+      toast({
+        description: data.message,
+      });
+
+      const params = new URLSearchParams();
+      params.set("email", data.data.userEmail);
+      router.push(`/otp?${params.toString()}`);
+    } catch (error) {
+      let message = "Somethign went wrong!";
+      if (error instanceof Error && error.message) {
+        message = error.message;
+      }
+      toast({
+        description: message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Rest of your component remains the same...
   return (
     <main className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-4">
       <div className="absolute top-4 right-4">
@@ -110,10 +212,11 @@ const SignupPage = () => {
               <div className="relative">
                 <Input
                   id="username"
+                  name="username"
                   type="text"
                   placeholder="John Doe"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  value={formData.username}
+                  onChange={handleInputChange}
                   className={`${
                     usernameError
                       ? "border-red-500 focus-visible:ring-red-500"
@@ -138,7 +241,22 @@ const SignupPage = () => {
 
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="john@example.com" />
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="john@example.com"
+                value={formData.email}
+                onChange={handleInputChange}
+                className={
+                  formErrors.email
+                    ? "border-red-500 focus-visible:ring-red-500"
+                    : ""
+                }
+              />
+              {formErrors.email && (
+                <p className="text-sm text-red-500 mt-1">{formErrors.email}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -146,8 +264,16 @@ const SignupPage = () => {
               <div className="relative">
                 <Input
                   id="password"
+                  name="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  className={
+                    formErrors.password
+                      ? "border-red-500 focus-visible:ring-red-500"
+                      : ""
+                  }
                 />
                 <Button
                   type="button"
@@ -163,36 +289,59 @@ const SignupPage = () => {
                   )}
                 </Button>
               </div>
+              {formErrors.password && (
+                <p className="text-sm text-red-500 mt-1">
+                  {formErrors.password}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirm-password">Confirm Password</Label>
+              <Label htmlFor="confirmPassword">Confirm Password</Label>
               <div className="relative">
                 <Input
-                  id="confirm-password"
-                  type={showPassword ? "text" : "password"}
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
                   placeholder="Confirm password"
+                  value={formData.confirmPassword}
+                  onChange={handleInputChange}
+                  className={
+                    formErrors.confirmPassword
+                      ? "border-red-500 focus-visible:ring-red-500"
+                      : ""
+                  }
                 />
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
                   className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8"
-                  onClick={() => setShowPassword(!showPassword)}
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 >
-                  {showPassword ? (
+                  {showConfirmPassword ? (
                     <EyeOffIcon className="h-4 w-4" />
                   ) : (
                     <EyeIcon className="h-4 w-4" />
                   )}
                 </Button>
               </div>
+              {formErrors.confirmPassword && (
+                <p className="text-sm text-red-500 mt-1">
+                  {formErrors.confirmPassword}
+                </p>
+              )}
             </div>
 
             <Button
               type="submit"
               className="w-full"
-              disabled={!usernameAvailable || isChecking}
+              disabled={
+                !usernameAvailable ||
+                isChecking ||
+                Object.values(formErrors).some((error) => error) ||
+                !formData.confirmPassword
+              }
             >
               Sign Up
             </Button>
