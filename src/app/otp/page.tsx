@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,14 @@ import { resendOtp, verifyOtp } from "@/service/auth.service";
 import { ModeToggle } from "@/components/ui/modeToggle";
 
 const OTPPage = () => {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <OTPForm />
+    </Suspense>
+  );
+};
+
+const OTPForm = () => {
   const searchParams = useSearchParams();
   const email = searchParams.get("email") as string;
   const [otp, setOtp] = useState("");
@@ -40,11 +48,7 @@ const OTPPage = () => {
 
   const handleResendOTP = async () => {
     try {
-      // Add your resend OTP API call here
-
       const response = await resendOtp(localStorage.getItem("token"));
-
-      // Reset timer and disable resend button
       setTimer(60);
       setCanResend(false);
       toast({
@@ -71,7 +75,6 @@ const OTPPage = () => {
         },
         localStorage.getItem("token"),
       );
-
       toast({
         description: response.message,
       });
