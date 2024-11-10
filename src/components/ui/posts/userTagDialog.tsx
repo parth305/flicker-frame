@@ -23,7 +23,7 @@ const USERS = [
     id: 1,
     name: "Alice Johnson",
     username: "alice_j",
-    avatar: "/api/placeholder/32/32",
+    avatar: "/avatar.jpeg",
   },
   {
     id: 2,

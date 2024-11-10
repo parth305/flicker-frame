@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
-import { ModeToggle } from "./modeToggle";
+import { ModeToggle } from "../modeToggle";
 import UserTagDialog from "./userTagDialog";
 
 export interface IUser {
