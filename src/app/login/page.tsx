@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { FaGoogle, FaFacebook } from "react-icons/fa";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
+import { useRouter } from "next/navigation"; // Correct import for navigation in App Router
 
 import {
   Card,
@@ -18,13 +19,117 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ModeToggle } from "@/components/ui/modeToggle";
+import { login } from "@/service/auth.service";
+import { useToast } from "@/hooks/use-toast";
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState(""); // State for email
+  const [password, setPassword] = useState(""); // State for password
+  const [loading, setLoading] = useState(false); // State to manage loading
+  const [error, setError] = useState<string | null>(null); // State for general error handling
+  const [emailError, setEmailError] = useState(""); // State for email validation error
+  const [passwordError, setPasswordError] = useState(""); // State for password validation error
+  const router = useRouter(); // Use router from next/navigation for App Router
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const { toast } = useToast();
+
+  // Email validation regex
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  // Password validation regex (at least 1 lowercase, 1 uppercase, 1 number, 1 special character, minimum 8 characters)
+  const passwordRegex =
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+  // Validate email on every input change
+  const validateEmail = (value: string) => {
+    if (!emailRegex.test(value)) {
+      setEmailError("Invalid email address");
+    } else {
+      setEmailError(""); // Clear error if email is valid
+    }
+    setEmail(value);
+  };
+
+  // Validate password on every input change
+  const validatePassword = (value: string) => {
+    if (!passwordRegex.test(value)) {
+      setPasswordError(
+        "Password must be at least 8 characters, with a mix of upper/lowercase letters, a number, and a special character.",
+      );
+    } else {
+      setPasswordError(""); // Clear error if password is valid
+    }
+    setPassword(value);
+  };
+
+  // Handle form submission
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("Login submitted");
+
+    setLoading(true);
+    setError(null);
+
+    // Check if both email and password are valid before submitting
+    if (!emailError && !passwordError) {
+      try {
+        const response = await login({
+          userEmail: email,
+          userPassword: password,
+        });
+
+        localStorage.setItem("token", response.data.accessToken);
+
+        if (response.data.isEmailVerified === false) {
+          toast({
+            duration: 5000,
+            description: "Please verify your email!",
+            variant: "destructive",
+          });
+
+          const params = new URLSearchParams();
+          params.set("email", email);
+          router.push(`/otp?${params.toString()}`);
+          return;
+        }
+
+        if (response.data.isUserInfoExists === false) {
+          toast({
+            duration: 5000,
+            description: "Please fill user information!",
+            variant: "destructive",
+          });
+          router.push("/userInfo");
+          return;
+        }
+
+        delete response.data.accessToken;
+
+        localStorage.setItem("userData", JSON.stringify(response.data));
+
+        toast({
+          duration: 5000,
+          description: "Successfully logged in!",
+          variant: "default",
+        });
+
+        // Redirect to homepage
+        router.push("/");
+      } catch (error) {
+        let msg = "Something Went Wrong!";
+        if (error instanceof Error) {
+          msg = error.message;
+        }
+        toast({
+          duration: 5000,
+          description: msg,
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      setLoading(false);
+    }
   };
 
   return (
@@ -49,8 +154,16 @@ const LoginPage = () => {
                 id="email"
                 type="email"
                 placeholder="john@example.com"
+                value={email}
+                onChange={(e) => validateEmail(e.target.value)} // Validate as user types
                 required
+                className={`${
+                  emailError ? "border-red-500" : "border-gray-300"
+                } focus:ring-2 focus:ring-blue-500`} // Apply red border on error
               />
+              {emailError && (
+                <p className="mt-1 text-xs text-red-500">{emailError}</p> // Display email error message
+              )}
             </div>
 
             <div className="space-y-2">
@@ -60,6 +173,12 @@ const LoginPage = () => {
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter password"
+                  value={password}
+                  onChange={(e) => validatePassword(e.target.value)} // Validate as user types
+                  required
+                  className={`${
+                    passwordError ? "border-red-500" : "border-gray-300"
+                  } focus:ring-2 focus:ring-blue-500`} // Apply red border on error
                 />
                 <Button
                   type="button"
@@ -75,6 +194,9 @@ const LoginPage = () => {
                   )}
                 </Button>
               </div>
+              {passwordError && (
+                <p className="mt-1 text-xs text-red-500">{passwordError}</p> // Display password error message
+              )}
             </div>
 
             <div className="flex items-center justify-between">
@@ -95,9 +217,13 @@ const LoginPage = () => {
               </Link>
             </div>
 
-            <Button type="submit" className="w-full">
-              Sign in
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Signing in..." : "Sign in"}
             </Button>
+
+            {error && (
+              <p className="mt-2 text-center text-sm text-red-500">{error}</p>
+            )}
           </form>
 
           <div className="relative my-6">

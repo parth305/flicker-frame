@@ -172,6 +172,7 @@ const SignupPage = () => {
 
       localStorage.setItem("token", data.data.accessToken);
       toast({
+        duration: 5000,
         description: data.message,
       });
 
@@ -184,6 +185,7 @@ const SignupPage = () => {
         message = error.message;
       }
       toast({
+        duration: 5000,
         description: message,
         variant: "destructive",
       });
@@ -230,10 +232,10 @@ const SignupPage = () => {
                 )}
               </div>
               {usernameError && (
-                <p className="text-sm text-red-500 mt-1">{usernameError}</p>
+                <p className="text-xs text-red-500 mt-1">{usernameError}</p>
               )}
               {usernameAvailable && (
-                <p className="text-sm text-green-500 mt-1">
+                <p className="text-xs text-green-500 mt-1">
                   Username available!
                 </p>
               )}
@@ -255,7 +257,7 @@ const SignupPage = () => {
                 }
               />
               {formErrors.email && (
-                <p className="text-sm text-red-500 mt-1">{formErrors.email}</p>
+                <p className="text-xs text-red-500 mt-1">{formErrors.email}</p>
               )}
             </div>
 
@@ -290,7 +292,7 @@ const SignupPage = () => {
                 </Button>
               </div>
               {formErrors.password && (
-                <p className="text-sm text-red-500 mt-1">
+                <p className="text-xs text-red-500 mt-1">
                   {formErrors.password}
                 </p>
               )}
@@ -327,7 +329,7 @@ const SignupPage = () => {
                 </Button>
               </div>
               {formErrors.confirmPassword && (
-                <p className="text-sm text-red-500 mt-1">
+                <p className="text-xs text-red-500 mt-1">
                   {formErrors.confirmPassword}
                 </p>
               )}

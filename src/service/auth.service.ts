@@ -20,6 +20,14 @@ async function signup(params: {
   }
 }
 
+async function login(params: { userEmail: string; userPassword: string }) {
+  try {
+    return await request.post(`auth/login`, params);
+  } catch (error) {
+    throw error;
+  }
+}
+
 async function verifyOtp(
   body: { userEmail: string; otpValue: string },
   token: string | null,
@@ -43,4 +51,4 @@ async function resendOtp(token: string | null) {
   }
 }
 
-export { checkUserNameAvailablity, signup, verifyOtp, resendOtp };
+export { checkUserNameAvailablity, signup, verifyOtp, resendOtp, login };

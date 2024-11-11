@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { resendOtp, verifyOtp } from "@/service/auth.service";
 import { ModeToggle } from "@/components/ui/modeToggle";
+import { useRouter } from "next/navigation";
 
 const OTPPage = () => {
   return (
@@ -25,6 +26,7 @@ const OTPForm = () => {
   const [canResend, setCanResend] = useState(false);
 
   const { toast } = useToast();
+  const router = useRouter();
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -52,6 +54,7 @@ const OTPForm = () => {
       setTimer(60);
       setCanResend(false);
       toast({
+        duration: 5000,
         description: response.message,
       });
     } catch (error) {
@@ -60,6 +63,7 @@ const OTPForm = () => {
         message = error.message;
       }
       toast({
+        duration: 5000,
         description: message,
         variant: "destructive",
       });
@@ -76,14 +80,17 @@ const OTPForm = () => {
         localStorage.getItem("token"),
       );
       toast({
+        duration: 5000,
         description: response.message,
       });
+      router.push("/userInfo");
     } catch (error) {
       let message = "Something went wrong!";
       if (error instanceof Error && error.message) {
         message = error.message;
       }
       toast({
+        duration: 5000,
         description: message,
         variant: "destructive",
       });
