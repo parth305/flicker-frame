@@ -13,13 +13,33 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft } from "lucide-react";
-import { FormEvent } from "react";
+import React from "react";
 import { ModeToggle } from "@/components/ui/modeToggle";
+import { useToast } from "@/hooks/use-toast";
+import { frogotPassword } from "@/service/auth.service";
 
 const ForgotPasswordPage = () => {
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const { toast } = useToast();
+
+  const handleSubmit = async (e: React.ChangeEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("Reset password email submitted");
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(e.target.email.value)) {
+      toast({
+        duration: 5000,
+        description: "Please enter valid email!",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const data = await frogotPassword(e.target.email.value);
+
+    toast({
+      duration: 5000,
+      description: data.message,
+    });
   };
 
   return (
@@ -43,9 +63,10 @@ const ForgotPasswordPage = () => {
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
-                type="email"
+                type="text"
                 placeholder="john@example.com"
                 required
+                name="email"
               />
             </div>
             <Button type="submit" className="w-full">

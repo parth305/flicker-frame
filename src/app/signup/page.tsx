@@ -192,6 +192,10 @@ const SignupPage = () => {
     }
   };
 
+  const handleGoggleSignUp = () => {
+    window.location.href = `${process.env.NEXT_PUBLIC_SERVER_URL}/auth/verify/google`;
+  };
+
   // Rest of your component remains the same...
   return (
     <main className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-4">
@@ -361,7 +365,11 @@ const SignupPage = () => {
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <Button variant="outline" className="w-full">
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={handleGoggleSignUp}
+            >
               <FaGoogle className="mr-2 h-4 w-4" />
               Google
             </Button>
@@ -375,7 +383,7 @@ const SignupPage = () => {
             Already have an account?{" "}
             <Link
               href="/login"
-              className="underline underline-offset-4 hover:text-primary"
+              className=" text-primary underline-offset-4 hover:underline"
             >
               Log in
             </Link>

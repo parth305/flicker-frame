@@ -132,6 +132,10 @@ const LoginPage = () => {
     }
   };
 
+  const handleGoggleSignUp = () => {
+    window.location.href = `${process.env.NEXT_PUBLIC_SERVER_URL}/auth/verify/google`;
+  };
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-4">
       <div className="absolute top-4 right-4">
@@ -238,7 +242,11 @@ const LoginPage = () => {
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <Button variant="outline" className="w-full">
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={handleGoggleSignUp}
+            >
               <FaGoogle className="h-5 w-5" />
             </Button>
             <Button variant="outline" className="w-full">

@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { updateUserInfo } from "@/service/user.service";
+import Link from "next/link";
 
 interface FormData {
   firstName: string;
@@ -405,6 +406,16 @@ const UserInfoPage = () => {
               Save Profile
             </Button>
           </form>
+
+          <p className="mt-3 text-center text-sm text-muted-foreground">
+            Don&apos;t have an account?{" "}
+            <Link
+              href="/signup"
+              className="font-medium text-primary hover:underline"
+            >
+              Sign up
+            </Link>
+          </p>
         </CardContent>
       </Card>
     </main>

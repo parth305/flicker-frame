@@ -51,4 +51,28 @@ async function resendOtp(token: string | null) {
   }
 }
 
-export { checkUserNameAvailablity, signup, verifyOtp, resendOtp, login };
+async function frogotPassword(email: string) {
+  try {
+    return await request.post(`auth/forgotPassword`, { email });
+  } catch (error) {
+    throw error;
+  }
+}
+
+async function resetPassword(password: string) {
+  try {
+    return await request.post(`auth/forgotPassword`, { password });
+  } catch (error) {
+    throw error;
+  }
+}
+
+export {
+  checkUserNameAvailablity,
+  signup,
+  verifyOtp,
+  resendOtp,
+  login,
+  frogotPassword,
+  resetPassword,
+};
