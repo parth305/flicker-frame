@@ -53,7 +53,7 @@ async function resendOtp(token: string | null) {
 
 async function frogotPassword(email: string) {
   try {
-    return await request.post(`auth/forgotPassword`, { email });
+    return await request.get(`auth/resetPassword?email=${email}`);
   } catch (error) {
     throw error;
   }
@@ -67,6 +67,14 @@ async function resetPassword(password: string) {
   }
 }
 
+async function verifyGoogle(code: string) {
+  try {
+    return await request.get(`auth/verify/google?code=${code}`);
+  } catch (error) {
+    throw error;
+  }
+}
+
 export {
   checkUserNameAvailablity,
   signup,
@@ -75,4 +83,5 @@ export {
   login,
   frogotPassword,
   resetPassword,
+  verifyGoogle,
 };

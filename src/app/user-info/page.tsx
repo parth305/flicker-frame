@@ -156,7 +156,7 @@ const UserInfoPage = () => {
     setIsSubmitting(true);
     try {
       // Add your API call here to submit user info
-      await updateUserInfo(
+      const response = await updateUserInfo(
         {
           firstName: formData.firstName,
           lastName: formData.lastName,
@@ -165,6 +165,18 @@ const UserInfoPage = () => {
           dob: formData.dateOfBirth,
         },
         localStorage.getItem("token"),
+      );
+
+      localStorage.setItem(
+        "userData",
+        JSON.stringify({
+          userEmail: response?.data?.userEmail,
+          id: response?.data?.id,
+          firstName: response?.data?.userInfo?.firstName,
+          lastname: response?.data?.userInfo?.lastName,
+          dob: response?.data?.userIndo?.dob || new Date().toISOString(),
+          // profilePicture: response?.data?.userInfo?.userProfilePicUri,
+        }),
       );
 
       toast({

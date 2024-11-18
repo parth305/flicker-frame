@@ -98,13 +98,23 @@ const LoginPage = () => {
             description: "Please fill user information!",
             variant: "destructive",
           });
-          router.push("/userInfo");
+          router.push("/user-info");
           return;
         }
 
         delete response.data.accessToken;
 
-        localStorage.setItem("userData", JSON.stringify(response.data));
+        localStorage.setItem(
+          "userData",
+          JSON.stringify({
+            userEmail: response?.data?.userEmail,
+            id: response?.data?.id,
+            firstName: response?.data?.userInfo?.firstName,
+            lastname: response?.data?.userInfo?.lastName,
+            dob: response?.data?.userIndo?.dob || new Date().toISOString(),
+            // profilePicture: response?.data?.userInfo?.userProfilePicUri,
+          }),
+        );
 
         toast({
           duration: 5000,
@@ -133,7 +143,7 @@ const LoginPage = () => {
   };
 
   const handleGoggleSignUp = () => {
-    window.location.href = `${process.env.NEXT_PUBLIC_SERVER_URL}/auth/verify/google`;
+    window.location.href = `${process.env.NEXT_PUBLIC_SERVER_URL}/auth/login/google`;
   };
 
   return (

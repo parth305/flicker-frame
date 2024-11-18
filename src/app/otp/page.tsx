@@ -83,7 +83,7 @@ const OTPForm = () => {
         duration: 5000,
         description: response.message,
       });
-      router.push("/userInfo");
+      router.push("/user-info");
     } catch (error) {
       let message = "Something went wrong!";
       if (error instanceof Error && error.message) {
