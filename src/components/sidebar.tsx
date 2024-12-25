@@ -20,7 +20,6 @@ import {
   BookMarked,
   LogOut,
   Sun,
-  Moon,
 } from "lucide-react";
 
 const Sidebar = () => {
